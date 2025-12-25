@@ -8,8 +8,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Caliph Atibrata | Portfolio",
-  description: "Neo-Brutalism Developer Portfolio",
+  title: "Caliph Atibrata",
+  description: "Portfolio",
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${spaceGrotesk.variable} font-sans antialiased`}>
+      <body className={spaceGrotesk.variable}>
         {children}
       </body>
     </html>
