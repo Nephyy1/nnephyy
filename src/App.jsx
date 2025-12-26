@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import emailjs from '@emailjs/browser';
 import { 
   Code, 
   MapPin, 
@@ -13,20 +14,25 @@ import {
   Zap,
   Wifi,
   Database,
-  Bot
+  Bot,
+  Loader2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
-const NeoButton = ({ children, className = "", onClick, type = "button" }) => (
+const NeoButton = ({ children, className = "", onClick, type = "button", disabled = false }) => (
   <motion.button
-    whileHover={{ x: 2, y: 2, boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
-    whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)" }}
+    whileHover={!disabled ? { x: 2, y: 2, boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" } : {}}
+    whileTap={!disabled ? { x: 4, y: 4, boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)" } : {}}
     type={type}
     onClick={onClick}
+    disabled={disabled}
     className={`
       px-6 py-3 font-bold text-black bg-white border-4 border-black 
       shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
       transition-all duration-200 
       uppercase tracking-wider ${className}
+      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
     `}
   >
     {children}
@@ -78,6 +84,8 @@ const FloatingIcon = ({ icon: Icon, delay, className }) => (
 export default function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('skills');
+  const [emailStatus, setEmailStatus] = useState('idle');
+  const form = useRef();
   const controls = useAnimation();
 
   useEffect(() => {
@@ -110,6 +118,27 @@ export default function App() {
       y: 0,
       transition: { type: "spring", stiffness: 300, damping: 15 }
     });
+  };
+
+  const sendEmail = (e) => {
+    e.preventDefault();
+    setEmailStatus('sending');
+
+    emailjs
+      .sendForm('service_ookvytw', 'template_n095bvo', form.current, {
+        publicKey: 'Hl5VjFN5FfNTBK14P',
+      })
+      .then(
+        () => {
+          setEmailStatus('success');
+          form.current.reset();
+          setTimeout(() => setEmailStatus('idle'), 5000);
+        },
+        (error) => {
+          setEmailStatus('error');
+          setTimeout(() => setEmailStatus('idle'), 5000);
+        },
+      );
   };
 
   const projects = [
@@ -417,12 +446,14 @@ export default function App() {
               Mari Bekerja Sama
             </h2>
             
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form ref={form} className="space-y-6" onSubmit={sendEmail}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="font-black text-lg">NAMA</label>
                   <input 
+                    name="user_name"
                     type="text" 
+                    required
                     className="w-full p-4 border-4 border-black bg-white focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow font-bold"
                     placeholder="Siapa namamu?"
                   />
@@ -430,7 +461,9 @@ export default function App() {
                 <div className="space-y-2">
                   <label className="font-black text-lg">EMAIL</label>
                   <input 
+                    name="user_email"
                     type="email" 
+                    required
                     className="w-full p-4 border-4 border-black bg-white focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow font-bold"
                     placeholder="email@kamu.com"
                   />
@@ -440,6 +473,8 @@ export default function App() {
               <div className="space-y-2">
                 <label className="font-black text-lg">PESAN</label>
                 <textarea 
+                  name="message"
+                  required
                   rows={4}
                   className="w-full p-4 border-4 border-black bg-white focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow font-bold resize-none"
                   placeholder="Ceritakan tentang proyekmu..."
@@ -447,9 +482,35 @@ export default function App() {
               </div>
 
               <div className="flex justify-end">
-                <NeoButton type="submit" className="bg-green-400 w-full md:w-auto flex items-center justify-center gap-2">
-                  <Send size={20} />
-                  Kirim Pesan
+                <NeoButton 
+                  type="submit" 
+                  disabled={emailStatus === 'sending'}
+                  className={`w-full md:w-auto flex items-center justify-center gap-2 ${
+                    emailStatus === 'success' ? 'bg-green-400' : 
+                    emailStatus === 'error' ? 'bg-red-400' : 'bg-green-400'
+                  }`}
+                >
+                  {emailStatus === 'sending' ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Mengirim...
+                    </>
+                  ) : emailStatus === 'success' ? (
+                    <>
+                      <CheckCircle size={20} />
+                      Terkirim!
+                    </>
+                  ) : emailStatus === 'error' ? (
+                    <>
+                      <XCircle size={20} />
+                      Gagal
+                    </>
+                  ) : (
+                    <>
+                      <Send size={20} />
+                      Kirim Pesan
+                    </>
+                  )}
                 </NeoButton>
               </div>
             </form>
@@ -466,7 +527,7 @@ export default function App() {
         </div>
       </footer>
 
-       <style>{`
+      <style>{`
         .bg-pattern {
           background-image: radial-gradient(circle, #000 1px, transparent 1px);
           background-size: 20px 20px;
